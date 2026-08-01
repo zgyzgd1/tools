@@ -1103,12 +1103,20 @@ async fn convert_video_batch(
 
             // Control concurrency: wait for one task to complete before spawning more
             while join_set.len() >= max_parallel {
-                if let Some(_) = join_set.join_next().await {}
+                if let Some(result) = join_set.join_next().await {
+                    if let Err(e) = result {
+                        eprintln!("[video_batch] task join error: {}", e);
+                    }
+                }
             }
         }
 
         // Wait for all remaining tasks
-        while let Some(_) = join_set.join_next().await {}
+        while let Some(result) = join_set.join_next().await {
+            if let Err(e) = result {
+                eprintln!("[video_batch] task join error: {}", e);
+            }
+        }
 
         let success_count = *success_count.lock().await;
         let fail_count = *fail_count.lock().await;
@@ -1148,6 +1156,7 @@ struct AudioTrack {
 
 #[tauri::command]
 async fn probe_video(input_path: String) -> Result<ProbeResult, String> {
+    is_path_safe(std::path::Path::new(&input_path))?;
     let ffmpeg_path = get_ffmpeg_path()?;
     let mut cmd = tokio::process::Command::new(&ffmpeg_path);
     cmd.arg("-i").arg(&input_path)
@@ -1315,19 +1324,39 @@ async fn extract_audio(
     }
 }
 
-fn is_path_safe(path: &std::path::Path) -> Result<(), String> {
-    // Try to canonicalize the path. If it doesn't exist (e.g. a new output file
-    // or a not-yet-created subdirectory), walk up ancestors until one exists.
-    let canonical = path.canonicalize().or_else(|_| {
-        let mut ancestor = path.parent();
-        while let Some(a) = ancestor {
-            if let Ok(c) = a.canonicalize() {
-                return Ok(c);
+/// Resolve a path to its canonical form, even if the target does not exist yet.
+/// Walks up to find the first existing ancestor, then re-appends the missing
+/// tail segments so path traversal (`..`) is fully resolved before allow-list checks.
+fn resolve_full_path(path: &std::path::Path) -> std::io::Result<std::path::PathBuf> {
+    // Fast path: path exists, canonicalize directly
+    if let Ok(c) = path.canonicalize() {
+        return Ok(c);
+    }
+    // Path doesn't exist — walk up to first existing ancestor
+    let mut ancestor = path.parent();
+    let mut remaining: Vec<&std::ffi::OsStr> = Vec::new();
+    while let Some(a) = ancestor {
+        if let Ok(c) = a.canonicalize() {
+            // Re-append the collected tail segments in original order
+            let mut result = c;
+            // remaining was collected bottom-up, so iterate in reverse
+            for segment in remaining.iter().rev() {
+                result.push(segment);
             }
-            ancestor = a.parent();
+            return Ok(result);
         }
-        Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No existing ancestor"))
-    }).map_err(|e| format!("Invalid path: {}", e))?;
+        // Collect this missing segment and continue upward
+        if let Some(name) = a.file_name() {
+            remaining.push(name);
+        }
+        ancestor = a.parent();
+    }
+    Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No existing ancestor"))
+}
+
+fn is_path_safe(path: &std::path::Path) -> Result<(), String> {
+    let canonical = resolve_full_path(path)
+        .map_err(|e| format!("Invalid path: {}", e))?;
     let docs = dirs::document_dir().ok_or("Cannot find Documents folder")?;
     let dl = dirs::download_dir().ok_or("Cannot find Download folder")?;
     let appdata = dirs::data_dir().ok_or("Cannot find AppData folder")?;
@@ -1385,6 +1414,7 @@ fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
     // Reject files larger than 500MB to prevent OOM
     const MAX_FILE_SIZE: u64 = 500 * 1024 * 1024;
     if path.contains('\0') { return Err("Invalid path".to_string()); }
+    is_path_safe(std::path::Path::new(&path))?;
     let metadata = std::fs::metadata(&path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
     if metadata.len() > MAX_FILE_SIZE {
         return Err(format!("File too large ({}MB, max 500MB)", metadata.len() / 1024 / 1024));
@@ -1427,18 +1457,21 @@ fn write_file_chunk(path: String, offset: u64, bytes: Vec<u8>) -> Result<(), Str
 #[tauri::command]
 fn exists_path(path: String) -> Result<bool, String> {
     if path.contains('\0') { return Err("Invalid path".to_string()); }
+    is_path_safe(std::path::Path::new(&path))?;
     Ok(std::path::Path::new(&path).exists())
 }
 
 #[tauri::command]
 fn get_file_size(path: String) -> Result<u64, String> {
     if path.contains('\0') { return Err("Invalid path".to_string()); }
+    is_path_safe(std::path::Path::new(&path))?;
     std::fs::metadata(&path).map(|m| m.len()).map_err(|e| format!("Failed to read file metadata: {}", e))
 }
 
 #[tauri::command]
 fn reveal_in_folder(path: String) -> Result<(), String> {
     if path.contains('\0') { return Err("Invalid path".to_string()); }
+    is_path_safe(std::path::Path::new(&path))?;
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
@@ -1468,6 +1501,7 @@ fn reveal_in_folder(path: String) -> Result<(), String> {
 #[tauri::command]
 fn open_path(path: String) -> Result<(), String> {
     if path.contains('\0') { return Err("Invalid path".to_string()); }
+    is_path_safe(std::path::Path::new(&path))?;
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;

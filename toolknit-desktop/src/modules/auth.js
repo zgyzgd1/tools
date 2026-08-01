@@ -3,7 +3,7 @@
  * Migrated from main.js (lines ~4436-5520).
  */
 import { AUTH_API_BASE } from '../config.js';
-import { AVATAR_MAX_SIZE_BYTES } from '../constants.js';
+import { AVATAR_MAX_SIZE_BYTES, ALLOWED_AVATAR_TYPES } from '../constants.js';
 import { escapeHtml } from '../utils/dom.js';
 
 // ===== Auth Overlay =====
@@ -501,6 +501,11 @@ export function init() {
       if (!file) return;
       if (file.size > AVATAR_MAX_SIZE_BYTES) {
         showAuthError(registerError2, t('auth.errAvatarTooLarge'));
+        registerAvatarFile.value = '';
+        return;
+      }
+      if (!ALLOWED_AVATAR_TYPES[file.type]) {
+        showAuthError(registerError2, t('auth.errAvatarType'));
         registerAvatarFile.value = '';
         return;
       }

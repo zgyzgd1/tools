@@ -12,8 +12,6 @@
       import { HELP_CONTENT, getHelpContent } from './help-data.js';
       import { getLegalContent } from './legal-data.js';
       import JSZip from 'jszip';
-      // Modular auth (extracted from main.js)
-      import { init as initAuth } from './modules/auth.js';
       // Expose i18n t() for modules that need it
       window.__i18n_t = t;
 
@@ -15102,10 +15100,10 @@
         }
 
         container.innerHTML = favs.map(f => `
-          <div class="fav-item" data-tool="${f.tool}" data-category="${f.category || ''}">
+          <div class="fav-item" data-tool="${escapeHtml(f.tool)}" data-category="${escapeHtml(f.category || '')}">
             <div class="fav-icon">${f.iconHtml || ''}</div>
-            <div class="fav-name">${f.name}</div>
-            <div class="fav-remove" data-tool="${f.tool}">
+            <div class="fav-name">${escapeHtml(f.name)}</div>
+            <div class="fav-remove" data-tool="${escapeHtml(f.tool)}">
               <i data-lucide="x"></i>
             </div>
           </div>
@@ -15151,9 +15149,9 @@
         container.innerHTML = picks.map(item => {
           const info = getToolInfo(item);
           return `
-            <div class="rec-item" data-tool="${info.toolId}" data-category="${info.category || ''}">
+            <div class="rec-item" data-tool="${escapeHtml(info.toolId)}" data-category="${escapeHtml(info.category || '')}">
               <div class="rec-icon">${info.iconHtml || ''}</div>
-              <div class="rec-name">${info.name}</div>
+              <div class="rec-name">${escapeHtml(info.name)}</div>
             </div>
           `;
         }).join('');
