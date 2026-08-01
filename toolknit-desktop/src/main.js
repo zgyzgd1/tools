@@ -8,9 +8,14 @@
       import { getLang, setLang, applyTranslations, onLangChange, t } from './i18n.js';
       import changelog from './data/changelog.json';
       import typingWordsData from './data/typing-words.json';
+      import { AUTH_API_BASE } from './config.js';
       import { HELP_CONTENT, getHelpContent } from './help-data.js';
       import { getLegalContent } from './legal-data.js';
       import JSZip from 'jszip';
+      // Modular auth (extracted from main.js)
+      import { init as initAuth } from './modules/auth.js';
+      // Expose i18n t() for modules that need it
+      window.__i18n_t = t;
 
       // Disable context menu globally, but allow on tool items for favorites
       document.addEventListener('contextmenu', (e) => {
@@ -4490,7 +4495,7 @@
         }, 600);
       }
 
-      const AUTH_API_BASE = 'https://toolknitapi.24picture.com';
+      // AUTH_API_BASE is imported from ./config.js (overridable via VITE_API_BASE env var)
 
       const SERVER_ERROR_MAP = {
         'Email already registered': 'auth.errEmailExists',

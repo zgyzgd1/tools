@@ -1,11 +1,10 @@
 /**
  * Subset NotoSansSC OTF fonts to common Chinese characters + ASCII.
- * Uses opentype.js to read OTF and write subsetted TTF.
+ * Uses the 'subset-font' npm package for reliable OTF→TTF subsetting.
  * Result: ~2-3MB TTF files that can be fully embedded without CID subsetting issues.
  */
 const fs = require('fs');
 const path = require('path');
-const opentype = require('opentype.js');
 
 // Common Chinese characters + ASCII + punctuation
 const commonChars = ` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~　、。，．·：；？！…‥『』「」〝〟′″〃〈〉《》【】〔〕→←↑↓↔⇒⇔
@@ -23,102 +22,6 @@ for (let i = 32; i < 127; i++) {
 
 console.log(`[subset] Total unique characters: ${charSet.size}`);
 
-function subsetFont(inputPath, outputPath) {
-  const inputBuf = fs.readFileSync(inputPath);
-  
-  // Parse the OTF font
-  const font = opentype.parse(inputBuf.buffer.slice(inputBuf.byteOffset, inputBuf.byteOffset + inputBuf.byteLength));
-  
-  // Get glyph indices for our character set
-  const glyphIds = new Set();
-  const glyphsToKeep = [];
-  
-  // Always keep .notdef (glyph 0)
-  glyphIds.add(0);
-  glyphsToKeep.push(font.glyphs.get(0));
-  
-  for (const ch of charSet) {
-    const glyphId = font.charToGlyphIndex(ch);
-    if (glyphId >= 0 && !glyphIds.has(glyphId)) {
-      glyphIds.add(glyphId);
-      glyphsToKeep.push(font.glyphs.get(glyphId));
-    }
-  }
-  
-  console.log(`[subset] ${path.basename(inputPath)}: keeping ${glyphIds.size} glyphs out of ${font.glyphs.length}`);
-  
-  // Create a new font with only the subset glyphs
-  // opentype.js doesn't have a built-in subset function, so we need to use a different approach
-  // We'll use font.toBuffer or create a new font
-  
-  // Actually, opentype.js doesn't support subsetting directly.
-  // Let's use a different approach: create a new font with only the needed glyphs.
-  
-  const subsetFont = new opentype.Font({
-    familyName: font.names.fontFamily.en || 'NotoSansSC',
-    styleName: font.names.fontSubfamily.en || 'Regular',
-    unitsPerEm: font.unitsPerEm,
-    ascender: font.ascender,
-    descender: font.descender,
-  });
-  
-  // Add glyphs to the new font
-  const charToGlyphMap = {};
-  for (const ch of charSet) {
-    const origGlyphId = font.charToGlyphIndex(ch);
-    if (origGlyphId >= 0) {
-      const glyph = font.glyphs.get(origGlyphId);
-      charToGlyphMap[ch] = glyph;
-    }
-  }
-  
-  // Add each character with its glyph
-  for (const [ch, glyph] of Object.entries(charToGlyphMap)) {
-    const code = ch.codePointAt(0);
-    subsetFont.charToGlyphIndex = subsetFont.charToGlyphIndex || {};
-    // We need to add the glyph to the new font
-    const newGlyphId = subsetFont.glyphs.length;
-    subsetFont.glyphs.push(glyph);
-    subsetFont.encoding[code] = newGlyphId;
-  }
-  
-  // This approach is getting too complex. Let me try a simpler method.
-  // Actually, let me just write the font using opentype.js's built-in methods.
-  
-  // The simplest approach: use the font's own arrayBuffer method after modifying glyph set
-  // But opentype.js doesn't really support this well.
-  
-  throw new Error('opentype.js subsetting not straightforward, trying alternative approach');
-}
-
-// Alternative: use @pdf-lib/fontkit directly to subset
-async function subsetWithFontkit(inputPath, outputPath) {
-  const fontkit = (await import('@pdf-lib/fontkit')).default;
-  const inputBuf = fs.readFileSync(inputPath);
-  
-  const font = fontkit.create(inputBuf);
-  
-  // Collect unique glyph IDs for our characters
-  const glyphIds = new Set([0]); // .notdef
-  const charToGid = {};
-  
-  for (const ch of charSet) {
-    const gid = font.cmap.lookup(ch.codePointAt(0));
-    if (gid !== undefined && gid !== null) {
-      glyphIds.add(gid);
-      charToGid[ch] = gid;
-    }
-  }
-  
-  console.log(`[subset] ${path.basename(inputPath)}: ${glyphIds.size} glyphs from ${font.numGlyphs} total`);
-  
-  // fontkit doesn't have a built-in subset+write either...
-  // Let me try yet another approach
-  throw new Error('fontkit subsetting not supported, trying another approach');
-}
-
-// Final approach: manually create a minimal TTF using the glyph data
-// Actually, the simplest working approach is to use the 'subset-font' npm package
 async function main() {
   try {
     // Try subset-font package

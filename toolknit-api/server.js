@@ -33,12 +33,13 @@ app.use(helmet({
   frameguard: { action: 'deny' },
 }));
 
-// CORS
-const corsOrigin = process.env.CORS_ORIGIN || '*';
-const allowedOrigins = corsOrigin.split(',').map(s => s.trim()).filter(Boolean);
+// CORS — default to same-origin only; set CORS_ORIGIN env var to enable specific origins
+const corsOrigin = process.env.CORS_ORIGIN;
+const allowedOrigins = corsOrigin ? corsOrigin.split(',').map(s => s.trim()).filter(Boolean) : [];
 app.use(cors({
   origin: (origin, cb) => {
-    if (allowedOrigins.includes('*') || !origin || allowedOrigins.includes(origin)) {
+    // Allow requests with no origin (mobile apps, curl, etc.) and configured origins
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
       cb(null, true);
     } else {
       cb(new Error('Not allowed by CORS'));

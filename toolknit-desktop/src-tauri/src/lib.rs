@@ -284,6 +284,29 @@ async fn download_ffmpeg(app_handle: tauri::AppHandle, language: String) -> Resu
         return Err("Failed to download ffmpeg from all sources".to_string());
     }
 
+    // Verify SHA256 checksum if FFMPEG_SHA256 env var is set at build time
+    if let Some(expected_hash) = option_env!("FFMPEG_SHA256") {
+        use std::io::Read;
+        use sha2::Digest;
+        let mut file = std::fs::File::open(&temp_zip)
+            .map_err(|e| format!("Failed to open downloaded zip for verification: {}", e))?;
+        let mut hasher = sha2::Sha256::new();
+        let mut buffer = [0u8; 8192];
+        loop {
+            let n = file.read(&mut buffer).map_err(|e| format!("Failed to read zip for hashing: {}", e))?;
+            if n == 0 { break; }
+            hasher.update(&buffer[..n]);
+        }
+        let actual_hash = format!("{:x}", hasher.finalize());
+        if actual_hash != expected_hash.to_lowercase() {
+            let _ = std::fs::remove_file(&temp_zip);
+            return Err(format!(
+                "FFmpeg checksum mismatch: expected {}, got {}",
+                expected_hash, actual_hash
+            ));
+        }
+    }
+
     // Extract ffmpeg.exe from the zip
     let zip_file = std::fs::File::open(&temp_zip)
         .map_err(|e| format!("FFmpeg zip open error: {}", e))?;
@@ -1589,8 +1612,11 @@ pub fn run() {
       let lang = read_initial_lang();
       let menu = build_tray_menu(app.handle(), &lang)?;
 
+      let icon = app.default_window_icon()
+        .ok_or_else(|| "Failed to load default window icon".to_string())?
+        .clone();
       let _tray = tauri::tray::TrayIconBuilder::with_id("main-tray")
-        .icon(app.default_window_icon().unwrap().clone())
+        .icon(icon)
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
