@@ -123,23 +123,40 @@ export function initDarkVeil(container, options = {}) {
 
   const start = performance.now();
   let frame = 0;
+  let lastFrameTime = 0;
+  const FPS_INTERVAL = 1000 / 30; // 30fps cap
 
-  const loop = () => {
-    program.uniforms.uTime.value = ((performance.now() - start) / 1000) * speed;
-    program.uniforms.uHueShift.value = hueShift;
-    program.uniforms.uNoise.value = noiseIntensity;
-    program.uniforms.uScan.value = scanlineIntensity;
-    program.uniforms.uScanFreq.value = scanlineFrequency;
-    program.uniforms.uWarp.value = warpAmount;
-    renderer.render({ scene: mesh });
+  // IntersectionObserver: pause when not visible
+  let isVisible = true;
+  const observer = new IntersectionObserver(entries => {
+    isVisible = entries[0]?.isIntersecting ?? true;
+  }, { threshold: 0 });
+  observer.observe(canvas);
+
+  const loop = (now) => {
     frame = requestAnimationFrame(loop);
+    if (!isVisible) return;
+    if (now - lastFrameTime < FPS_INTERVAL) return;
+    lastFrameTime = now;
+    program.uniforms.uTime.value = ((now - start) / 1000) * speed;
+    renderer.render({ scene: mesh });
   };
 
-  loop();
+  frame = requestAnimationFrame(loop);
 
   return () => {
     cancelAnimationFrame(frame);
+    observer.disconnect();
     window.removeEventListener('resize', resize);
     if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+    // Release WebGL resources
+    program?.remove();
+    mesh?.remove();
+    renderer?.destroy();
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (gl) {
+      const ext = gl.getExtension('WEBGL_lose_context');
+      ext?.loseContext();
+    }
   };
 }

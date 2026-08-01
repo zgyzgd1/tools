@@ -1089,8 +1089,8 @@
       .transition-mask.visible {
         opacity: 1;
         pointer-events: auto;
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
       }
 
       .settings-overlay {
@@ -1110,8 +1110,8 @@
       .settings-overlay.visible {
         opacity: 1;
         pointer-events: auto;
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
       }
 
       /* Toast container */
@@ -2875,8 +2875,8 @@
       .audio-convert-success-overlay.visible {
         opacity: 1;
         pointer-events: auto;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
       }
 
       .audio-convert-success-dialog {
@@ -3425,8 +3425,8 @@
       .bpm-demo-overlay.visible {
         opacity: 1;
         pointer-events: auto;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
       }
 
       .bpm-demo-content {
@@ -4234,8 +4234,8 @@
       .audio-clip-success-overlay.visible {
         opacity: 1;
         pointer-events: auto;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
       }
 
       .audio-clip-success-dialog {
@@ -5595,8 +5595,8 @@
         padding: 18px;
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(20px) saturate(1.2);
-        -webkit-backdrop-filter: blur(20px) saturate(1.2);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         border: 1px solid rgba(255, 255, 255, 0.12);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
         min-width: 0;
@@ -5615,8 +5615,8 @@
         padding: 18px;
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(20px) saturate(1.2);
-        -webkit-backdrop-filter: blur(20px) saturate(1.2);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         border: 1px solid rgba(255, 255, 255, 0.12);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
         min-width: 0;
@@ -6055,8 +6055,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         overflow: hidden;
       }
 
@@ -6261,8 +6261,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         overflow: hidden;
         position: relative;
       }
@@ -6748,8 +6748,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         overflow: hidden;
       }
 
@@ -6884,8 +6884,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         overflow: hidden;
         position: relative;
       }
@@ -7069,8 +7069,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         overflow: hidden;
       }
 
@@ -7252,8 +7252,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         overflow: hidden;
         position: relative;
       }
@@ -7359,8 +7359,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         overflow: hidden;
       }
 
@@ -7493,8 +7493,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         overflow: hidden;
         position: relative;
       }
@@ -7677,8 +7677,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         padding: 24px;
         overflow-y: auto;
       }
@@ -7807,8 +7807,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         padding: 24px;
         position: relative;
         overflow-y: auto;
@@ -8520,8 +8520,8 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 20px;
         padding: 28px;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
       }
 
       .typing-test-setting-group {

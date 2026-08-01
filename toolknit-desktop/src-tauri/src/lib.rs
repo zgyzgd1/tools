@@ -1,5 +1,68 @@
 ﻿use tauri::Manager;
 use tauri::Emitter;
+use std::sync::OnceLock;
+
+/// Cached directory paths for is_path_safe (computed once, reused on every call).
+static CACHED_DIRS: OnceLock<CachedDirs> = OnceLock::new();
+
+struct CachedDirs {
+    docs: std::path::PathBuf,
+    dl: std::path::PathBuf,
+    appdata: std::path::PathBuf,
+    temp: std::path::PathBuf,
+    exe_dir: Option<std::path::PathBuf>,
+    install_dir: Option<std::path::PathBuf>,
+}
+
+impl CachedDirs {
+    fn get() -> &'static Self {
+        CACHED_DIRS.get_or_init(|| Self::compute())
+    }
+
+    fn compute() -> Self {
+        let docs = dirs::document_dir().unwrap_or_default();
+        let dl = dirs::download_dir().unwrap_or_default();
+        let appdata = dirs::data_dir().unwrap_or_default();
+        let temp = std::env::temp_dir();
+
+        let docs_c = docs.canonicalize().unwrap_or(docs.clone());
+        let dl_c = dl.canonicalize().unwrap_or(dl.clone());
+        let appdata_c = appdata.canonicalize().unwrap_or(appdata.clone());
+        let temp_c = temp.canonicalize().unwrap_or(temp.clone());
+
+        let exe_dir = std::env::current_exe()
+            .ok()
+            .and_then(|e| e.parent().map(|p| p.to_path_buf()))
+            .and_then(|p| p.canonicalize().ok().or(Some(p)));
+
+        let install_dir = {
+            let exe = std::env::current_exe().ok();
+            exe.and_then(|e| e.parent().and_then(|p| {
+                let mut search = p.to_path_buf();
+                for _ in 0..4 {
+                    let candidate = search.join("install_config.json");
+                    if candidate.exists() {
+                        if let Ok(content) = std::fs::read_to_string(&candidate) {
+                            if let Ok(config) = serde_json::from_str::<serde_json::Value>(&content) {
+                                if let Some(ip) = config.get("installPath").and_then(|v| v.as_str()) {
+                                    let p = std::path::PathBuf::from(ip);
+                                    return p.canonicalize().ok().or(Some(p));
+                                }
+                            }
+                        }
+                    }
+                    match search.parent() {
+                        Some(p2) => search = p2.to_path_buf(),
+                        None => break,
+                    }
+                }
+                None
+            }))
+        };
+
+        Self { docs: docs_c, dl: dl_c, appdata: appdata_c, temp: temp_c, exe_dir, install_dir }
+    }
+}
 
 /// Read the installer language at startup (from install_lang.txt).
 /// Returns "zh" or "en", defaulting to "en" on any error.
@@ -1357,51 +1420,13 @@ fn resolve_full_path(path: &std::path::Path) -> std::io::Result<std::path::PathB
 fn is_path_safe(path: &std::path::Path) -> Result<(), String> {
     let canonical = resolve_full_path(path)
         .map_err(|e| format!("Invalid path: {}", e))?;
-    let docs = dirs::document_dir().ok_or("Cannot find Documents folder")?;
-    let dl = dirs::download_dir().ok_or("Cannot find Download folder")?;
-    let appdata = dirs::data_dir().ok_or("Cannot find AppData folder")?;
-    let temp = std::env::temp_dir();
-    // Canonicalize all comparison dirs so prefixes match (Windows \\?\ prefix)
-    let docs_c = docs.canonicalize().unwrap_or(docs.clone());
-    let dl_c = dl.canonicalize().unwrap_or(dl.clone());
-    let appdata_c = appdata.canonicalize().unwrap_or(appdata.clone());
-    let temp_c = temp.canonicalize().unwrap_or(temp.clone());
-    // Also allow the exe's parent directory (install directory) for output files
-    let exe_dir = std::env::current_exe()
-        .ok()
-        .and_then(|e| e.parent().map(|p| p.to_path_buf()))
-        .and_then(|p| p.canonicalize().ok().or(Some(p)));
-    // Also allow the install_path from install_config.json (may differ from exe_dir if exe is in a subdirectory)
-    let install_dir = {
-        let exe = std::env::current_exe().ok();
-        exe.and_then(|e| e.parent().and_then(|p| {
-            let mut search = p.to_path_buf();
-            for _ in 0..4 {
-                let candidate = search.join("install_config.json");
-                if candidate.exists() {
-                    if let Ok(content) = std::fs::read_to_string(&candidate) {
-                        if let Ok(config) = serde_json::from_str::<serde_json::Value>(&content) {
-                            if let Some(ip) = config.get("installPath").and_then(|v| v.as_str()) {
-                                let p = std::path::PathBuf::from(ip);
-                                return p.canonicalize().ok().or(Some(p));
-                            }
-                        }
-                    }
-                }
-                match search.parent() {
-                    Some(p2) => search = p2.to_path_buf(),
-                    None => break,
-                }
-            }
-            None
-        }))
-    };
-    let is_allowed = canonical.starts_with(&docs_c)
-        || canonical.starts_with(&dl_c)
-        || canonical.starts_with(&appdata_c)
-        || canonical.starts_with(&temp_c)
-        || exe_dir.as_ref().map_or(false, |d| canonical.starts_with(d))
-        || install_dir.as_ref().map_or(false, |d| canonical.starts_with(d));
+    let dirs = CachedDirs::get();
+    let is_allowed = canonical.starts_with(&dirs.docs)
+        || canonical.starts_with(&dirs.dl)
+        || canonical.starts_with(&dirs.appdata)
+        || canonical.starts_with(&dirs.temp)
+        || dirs.exe_dir.as_ref().map_or(false, |d| canonical.starts_with(d))
+        || dirs.install_dir.as_ref().map_or(false, |d| canonical.starts_with(d));
     if is_allowed {
         Ok(())
     } else {

@@ -68,6 +68,8 @@
       let isSwitching = false;
 
       // Tool card mouse spotlight effect and accessibility
+      // Performance: cache rect on mouseenter, use rAF to throttle mousemove
+      let cardRectCache = new WeakMap();
       document.querySelectorAll('.tool-card').forEach(card => {
         card.setAttribute('role', 'button');
         card.setAttribute('tabindex', '0');
@@ -75,12 +77,19 @@
         if (toolName) {
           card.setAttribute('aria-label', toolName.textContent || t('common.tool'));
         }
+        card.addEventListener('mouseenter', () => {
+          cardRectCache.set(card, card.getBoundingClientRect());
+        });
         card.addEventListener('mousemove', (e) => {
-          const rect = card.getBoundingClientRect();
+          const rect = cardRectCache.get(card);
+          if (!rect) return;
           const x = ((e.clientX - rect.left) / rect.width) * 100;
           const y = ((e.clientY - rect.top) / rect.height) * 100;
           card.style.setProperty('--mouse-x', `${x}%`);
           card.style.setProperty('--mouse-y', `${y}%`);
+        });
+        card.addEventListener('mouseleave', () => {
+          cardRectCache.delete(card);
         });
         card.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -91,13 +100,22 @@
       });
 
       // Audio list items accessibility + mouse spotlight
+      // Performance: cache rect on mouseenter instead of every mousemove
+      let itemRectCache = new WeakMap();
       document.querySelectorAll('.audio-list-item').forEach(item => {
+        item.addEventListener('mouseenter', () => {
+          itemRectCache.set(item, item.getBoundingClientRect());
+        });
         item.addEventListener('mousemove', (e) => {
-          const rect = item.getBoundingClientRect();
+          const rect = itemRectCache.get(item);
+          if (!rect) return;
           const x = ((e.clientX - rect.left) / rect.width) * 100;
           const y = ((e.clientY - rect.top) / rect.height) * 100;
           item.style.setProperty('--mouse-x', `${x}%`);
           item.style.setProperty('--mouse-y', `${y}%`);
+        });
+        item.addEventListener('mouseleave', () => {
+          itemRectCache.delete(item);
         });
         item.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -231,14 +249,20 @@
 
         if (transitionMask) transitionMask.classList.add('visible');
 
-        setTimeout(() => {
-          contentSections.forEach(section => section.classList.remove('active'));
-          const targetSection = document.querySelector(`.content-section[data-category="${category}"]`);
-          if (targetSection) targetSection.classList.add('active');
+        // Use double-rAF for faster, smoother transition (was 1000ms fixed delay)
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            contentSections.forEach(section => section.classList.remove('active'));
+            const targetSection = document.querySelector(`.content-section[data-category="${category}"]`);
+            if (targetSection) targetSection.classList.add('active');
 
-          if (transitionMask) transitionMask.classList.remove('visible');
-          isSwitching = false;
-        }, 1000);
+            // Fade out mask after a brief moment for visual continuity
+            setTimeout(() => {
+              if (transitionMask) transitionMask.classList.remove('visible');
+              isSwitching = false;
+            }, 200);
+          });
+        });
       }
 
       navItems.forEach(item => {
@@ -2149,10 +2173,10 @@
               const fullPath = outputDir + '\\' + fileName;
               const zipBytes = new Uint8Array(await zipBlob.arrayBuffer());
               const CHUNK_SIZE = 5_000_000;
-              await invoke('write_file_chunk', { path: fullPath, offset: 0, bytes: Array.from(zipBytes.subarray(0, CHUNK_SIZE)) });
+              await invoke('write_file_chunk', { path: fullPath, offset: 0, bytes: zipBytes.subarray(0, CHUNK_SIZE) });
               for (let off = CHUNK_SIZE; off < zipBytes.length; off += CHUNK_SIZE) {
                 const end = Math.min(off + CHUNK_SIZE, zipBytes.length);
-                await invoke('write_file_chunk', { path: fullPath, offset: off, bytes: Array.from(zipBytes.subarray(off, end)) });
+                await invoke('write_file_chunk', { path: fullPath, offset: off, bytes: zipBytes.subarray(off, end) });
               }
               savedPath = fullPath;
               lastIconGenDownloadDir = fullPath;
@@ -5270,7 +5294,7 @@
               fullPath = outputDir + '\\' + fileName;
               counter++;
             }
-            await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(singlePageBytes) });
+            await invoke('write_file_bytes', { path: fullPath, bytes: singlePageBytes });
             showPdfSplitSuccess(fullPath, 'single', 1);
           } else {
             const blob = new Blob([singlePageBytes], { type: 'application/pdf' });
@@ -5342,7 +5366,7 @@
                   fullPath = outputDir + '\\' + fileName;
                   counter++;
                 }
-                await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(singlePageBytes) });
+                await invoke('write_file_bytes', { path: fullPath, bytes: singlePageBytes });
                 lastSavedDir = fullPath;
                 savedCount++;
               } else {
@@ -5879,7 +5903,7 @@
               fullPath = outputDir + '\\' + fileName;
               counter++;
             }
-            await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(singlePageBytes) });
+            await invoke('write_file_bytes', { path: fullPath, bytes: singlePageBytes });
             showPdfRotateSuccess(fullPath, 'single', 1);
           } else {
             const blob = new Blob([singlePageBytes], { type: 'application/pdf' });
@@ -5946,7 +5970,7 @@
                 fullPath = outputDir + '\\' + fileName;
                 counter++;
               }
-              await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(mergedBytes) });
+              await invoke('write_file_bytes', { path: fullPath, bytes: mergedBytes });
               if (pdfRotateProcessMask) pdfRotateProcessMask.classList.remove('visible');
               if (pdfRotateProcessBarFill) pdfRotateProcessBarFill.style.width = '0%';
               showPdfRotateSuccess(fullPath, 'all', totalPages);
@@ -6380,7 +6404,7 @@
               fullPath = outputDir + '\\' + fileName;
               counter++;
             }
-            await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(encryptedBytes) });
+            await invoke('write_file_bytes', { path: fullPath, bytes: encryptedBytes });
             if (pdfEncryptProcessMask) pdfEncryptProcessMask.classList.remove('visible');
             if (pdfEncryptProcessBarFill) pdfEncryptProcessBarFill.style.width = '0%';
             pdfEncryptProcessing = false;
@@ -6816,7 +6840,7 @@
               fullPath = outputDir + '\\' + fileName;
               counter++;
             }
-            await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(decryptedBytes) });
+            await invoke('write_file_bytes', { path: fullPath, bytes: decryptedBytes });
             if (pdfDecryptProcessMask) pdfDecryptProcessMask.classList.remove('visible');
             if (pdfDecryptProcessBarFill) pdfDecryptProcessBarFill.style.width = '0%';
             pdfDecryptProcessing = false;
@@ -7411,10 +7435,10 @@
                 fullPath = outputDir + '\\' + fileName;
                 counter++;
               }
-              await invoke('write_file_chunk', { path: fullPath, offset: 0, bytes: Array.from(enhancedBytes.subarray(0, 5_000_000)) });
+              await invoke('write_file_chunk', { path: fullPath, offset: 0, bytes: enhancedBytes.subarray(0, 5_000_000) });
               for (let off = 5_000_000; off < enhancedBytes.length; off += 5_000_000) {
                 const end = Math.min(off + 5_000_000, enhancedBytes.length);
-                await invoke('write_file_chunk', { path: fullPath, offset: off, bytes: Array.from(enhancedBytes.subarray(off, end)) });
+                await invoke('write_file_chunk', { path: fullPath, offset: off, bytes: enhancedBytes.subarray(off, end) });
               }
               if (pdfEnhanceProcessMask) pdfEnhanceProcessMask.classList.remove('visible');
               if (pdfEnhanceProcessBarFill) pdfEnhanceProcessBarFill.style.width = '0%';
@@ -9402,7 +9426,7 @@
             const fileName = `ai_doc_${Date.now()}.pdf`;
             const fullPath = outputDir + '\\' + fileName;
             // write_file_bytes auto-creates parent directories
-            await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(pdfBytes) });
+            await invoke('write_file_bytes', { path: fullPath, bytes: pdfBytes });
             aiDocLastExportPath = fullPath;
             showAiDocSuccess(fullPath);
           } else {
@@ -10470,7 +10494,7 @@
             const outputDir = await getOutputDir('AI_Table');
             const fileName = `ai_table_${Date.now()}.pdf`;
             const fullPath = outputDir + '\\' + fileName;
-            await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(pdfBytes) });
+            await invoke('write_file_bytes', { path: fullPath, bytes: pdfBytes });
             aiTableLastExportPath = fullPath;
             showAiTableSuccess(fullPath);
           } else {
@@ -10492,7 +10516,7 @@
           const arrayBuffer = await blob.arrayBuffer();
           const outputDir = await getOutputDir('AI_Table');
           const fullPath = outputDir + '\\' + fileName;
-          await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(new Uint8Array(arrayBuffer)) });
+          await invoke('write_file_bytes', { path: fullPath, bytes: new Uint8Array(arrayBuffer) });
           aiTableLastExportPath = fullPath;
           showAiTableSuccess(fullPath);
         } else {
@@ -13661,7 +13685,7 @@
             fullPath = outputDir + '\\' + fileName;
             counter++;
           }
-          await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(mergedBytes) });
+          await invoke('write_file_bytes', { path: fullPath, bytes: mergedBytes });
           // Note: Tauri invoke serializes Vec<u8> from JS arrays; using Array.from for compatibility
           outputPath = fullPath;
         } else {
@@ -14101,7 +14125,7 @@
                     fullPath = outputDir + '\\' + fileName;
                     counter++;
                   }
-                  await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(result.compressedBytes) });
+                  await invoke('write_file_bytes', { path: fullPath, bytes: result.compressedBytes });
                   showPdfCompressSuccess(fullPath, 'single');
                 } catch (err) {
                   console.error('[PDF Compress] Save file error:', err);
@@ -14137,7 +14161,7 @@
                   fullPath = outputDir + '\\' + fileName;
                   counter++;
                 }
-                await invoke('write_file_bytes', { path: fullPath, bytes: Array.from(result.compressedBytes) });
+                await invoke('write_file_bytes', { path: fullPath, bytes: result.compressedBytes });
                 lastSavedPath = outputDir;
               }
               if (lastSavedPath) {

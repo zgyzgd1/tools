@@ -115,8 +115,19 @@ export function initLightRays(container, options = {}) {
     uniforms.rayDir.value = dir;
   }
 
+  // 30fps cap + IntersectionObserver visibility pause
+  let lastFrameTime = 0;
+  const FPS_INTERVAL = 1000 / 30;
+  let isVisible = true;
+  const visibilityObserver = new IntersectionObserver(entries => {
+    isVisible = entries[0]?.isIntersecting ?? true;
+  }, { threshold: 0 });
+
   function loop(t) {
-    if (destroyed || !renderer || !uniforms || !mesh) return;
+    animationId = requestAnimationFrame(loop);
+    if (!isVisible || destroyed || !renderer || !uniforms || !mesh) return;
+    if (t - lastFrameTime < FPS_INTERVAL) return;
+    lastFrameTime = t;
 
     uniforms.iTime.value = t * 0.001;
 
@@ -129,7 +140,6 @@ export function initLightRays(container, options = {}) {
 
     try {
       renderer.render({ scene: mesh });
-      animationId = requestAnimationFrame(loop);
     } catch (error) {
       console.warn('WebGL rendering error:', error);
     }
@@ -282,6 +292,8 @@ void main() {
       }
 
       updatePlacement();
+      // Observe visibility for pause/resume
+      if (container) visibilityObserver.observe(container);
       animationId = requestAnimationFrame(loop);
     } catch (error) {
       console.warn('Failed to initialize LightRays:', error);

@@ -163,10 +163,15 @@ export function initPlasma(containerEl, options = {}) {
   let raf = 0;
   let contextLost = false;
   let isVisible = true;
+  let lastFrameTime = 0;
+  const FPS_INTERVAL = 1000 / 30; // 30fps cap
   const t0 = performance.now();
 
   const loop = t => {
+    raf = requestAnimationFrame(loop);
     if (contextLost || !isVisible) return;
+    if (t - lastFrameTime < FPS_INTERVAL) return;
+    lastFrameTime = t;
     let timeValue = (t - t0) * 0.001;
     if (direction === 'pingpong') {
       const pingpongDuration = 10;
@@ -181,7 +186,6 @@ export function initPlasma(containerEl, options = {}) {
       program.uniforms.iTime.value = timeValue;
     }
     renderer.render({ scene: mesh });
-    raf = requestAnimationFrame(loop);
   };
 
   const handleContextLost = (e) => {

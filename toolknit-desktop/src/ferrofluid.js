@@ -208,7 +208,7 @@ export function initFerrofluid(containerEl, options = {}) {
       webgl: 2,
       dpr: dpr ?? Math.min(window.devicePixelRatio || 1, 2),
       alpha: true,
-      antialias: true
+      antialias: false
     });
   } catch {
     return null;
@@ -286,8 +286,20 @@ export function initFerrofluid(containerEl, options = {}) {
     canvas.addEventListener('pointermove', onPointerMove);
   }
 
+  // 30fps cap + IntersectionObserver visibility pause
+  let lastFrameTime = 0;
+  const FPS_INTERVAL = 1000 / 30;
+  let isVisible = true;
+  const observer = new IntersectionObserver(entries => {
+    isVisible = entries[0]?.isIntersecting ?? true;
+  }, { threshold: 0 });
+  observer.observe(canvas);
+
   const loop = t => {
     rafId = requestAnimationFrame(loop);
+    if (!isVisible) return;
+    if (t - lastFrameTime < FPS_INTERVAL) return;
+    lastFrameTime = t;
     uniforms.iTime.value = t * 0.001;
     if (mouseDampening > 0) {
       if (!lastTime) lastTime = t;
@@ -314,6 +326,7 @@ export function initFerrofluid(containerEl, options = {}) {
 
   return () => {
     if (rafId) cancelAnimationFrame(rafId);
+    observer.disconnect();
     if (mouseInteraction) canvas.removeEventListener('pointermove', onPointerMove);
     ro.disconnect();
     if (canvas.parentElement === containerEl) {

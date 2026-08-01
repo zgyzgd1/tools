@@ -180,17 +180,30 @@ export function initPlasmaWave(container, options = {}) {
 
   const startTime = performance.now();
   let animateId;
+  let lastFrameTime = 0;
+  const FPS_INTERVAL = 1000 / 30; // 30fps cap
+
+  // IntersectionObserver: pause when not visible
+  let isVisible = true;
+  const observer = new IntersectionObserver(entries => {
+    isVisible = entries[0]?.isIntersecting ?? true;
+  }, { threshold: 0 });
+  observer.observe(container);
 
   function update(now) {
+    animateId = requestAnimationFrame(update);
+    if (!isVisible) return;
+    if (now - lastFrameTime < FPS_INTERVAL) return;
+    lastFrameTime = now;
     program.uniforms.iTime.value = (now - startTime) * 0.001;
     renderer.render({ scene, camera });
-    animateId = requestAnimationFrame(update);
   }
 
   animateId = requestAnimationFrame(update);
 
   return () => {
     cancelAnimationFrame(animateId);
+    observer.disconnect();
     ro.disconnect();
     if (container && gl.canvas.parentNode === container) {
       container.removeChild(gl.canvas);

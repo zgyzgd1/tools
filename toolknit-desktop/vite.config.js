@@ -10,9 +10,21 @@ export default defineConfig(async () => ({
     },
   },
   build: {
+    target: "es2020",
+    minify: "esbuild",
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       input: {
         main: "index.html",
+      },
+      output: {
+        manualChunks: {
+          three: ["three"],
+          pdf: ["pdfjs-dist", "pdf-lib"],
+          excel: ["exceljs"],
+          charts: ["chart.js"],
+        },
       },
     },
   },
