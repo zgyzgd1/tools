@@ -15,10 +15,6 @@
     "creative": "创意工具",
     "settings": "设置"
   },
-  "user": {
-    "guest": "访客",
-    "notLoggedIn": "ID: 未登录"
-  },
   "home": {
     "update": {
       "title": "发现新版本",
@@ -31,29 +27,14 @@
       "confirm": "下载",
       "downloadFail": "下载失败：{error}"
     },
-    "aiLogin": {
-      "title": "需要登录",
-      "desc": "AI 功能需要登录并配置 AI 平台密钥后使用，请前往设置页面完成配置。",
-      "cancel": "取消",
-      "goSettings": "去设置"
-    },
     "welcome": "你好",
     "welcomeTitle": "首页",
     "welcomeDesc": "欢迎来到 ToolKnit 工具集。",
     "homeCategoryDesc": "欢迎来到 ToolKnit 工具集。",
-    "personalPanel": "个人面板",
-    "guest": "访客",
-    "clickToLogin": "点击登录",
-    "clickToSwitch": "点击切换",
-    "apiKey": "设置密钥",
-    "logout": "退出登录",
-    "logoutConfirmTitle": "确认退出",
-    "logoutConfirmMsg": "退出后需要重新登录，确认退出吗？",
     "cancel": "取消",
     "name": "名称",
     "signature": "签名",
     "id": "ID",
-    "autoLogin": "自动登录中",
     "quickAccess": "快速访问",
     "recentlyUsed": "最近使用",
     "stats": "数据统计",
@@ -71,10 +52,7 @@
     "empty": "暂无内容",
     "favAdd": "收藏",
     "favRemove": "取消收藏",
-    "favEmptyLogin": "登录后即可收藏常用工具",
-    "favEmptyLoginBtn": "去登录",
     "favEmptyGuide": "在工具上右键即可收藏到此处",
-    "favLoginRequired": "请先登录才能收藏",
     "favAdded": "已收藏",
     "favRemoved": "已取消收藏",
     "feedbackPage": {
@@ -1211,7 +1189,11 @@
     "blog": "博客",
     "blogDesc": "最新更新与技巧",
     "feedback": "反馈",
-    "feedbackDesc": "发送你的建议"
+    "feedbackDesc": "发送你的建议",
+    "greeting": {
+      "personalPanel": "每日寄语",
+      "favEmptyGuide": "在工具上右键即可收藏到此处"
+    }
   },
   "pdfMerge": {
     "title": "PDF 合并",
@@ -1484,61 +1466,5 @@
     "currentVersion": "1.0测试版",
     "version": "版本",
     "date": "日期"
-  },
-  "auth": {
-    "email": "邮箱",
-    "password": "密码",
-    "username": "用户名",
-    "usernamePlaceholder": "你的昵称",
-    "passwordPlaceholder": "至少 6 位",
-    "loginBtn": "登录",
-    "registerBtn": "提交注册",
-    "nextBtn": "下一步",
-    "backBtn": "返回上一步",
-    "avatarHint": "点击上传头像（可选）",
-    "avatarTitle": "请上传你的头像",
-    "noAccount": "没有账户？",
-    "registerHere": "注册",
-    "haveAccount": "已有账户？",
-    "loginHere": "登录",
-    "loginTitle": "欢迎回来",
-    "loginSubtitle": "登录以解锁全部功能",
-    "registerTitle": "创建账户",
-    "registerSubtitle": "注册以开始使用 ToolKnit",
-    "errNetwork": "网络错误，请检查网络连接",
-    "errServer": "服务器错误，请稍后重试",
-    "errTimeout": "请求超时，请重试",
-    "errInvalidEmail": "邮箱格式不正确",
-    "errPasswordShort": "密码至少 6 位",
-    "errPasswordMax": "密码长度需为 6-64 位",
-    "errUsernameRequired": "请输入用户名",
-    "errFillAll": "请填写所有字段",
-    "errFillEmailPassword": "请填写邮箱和密码",
-    "errEmailExists": "该邮箱已注册",
-    "errInvalidCredentials": "邮箱或密码错误",
-    "errAccountBanned": "账号已被封禁",
-    "errRegisterFailed": "注册失败",
-    "errAvatarTooLarge": "头像文件不能超过 2MB",
-    "errAvatarRequired": "请先上传头像再提交注册",
-    "errLoginFailed": "登录失败",
-    "errSessionExpired": "会话已过期，请重新登录",
-    "errDailyLimit": "今日使用次数已达上限",
-    "errUnauthorized": "未登录，请先登录",
-    "errNotFound": "资源不存在",
-    "errUnknown": "发生未知错误"
-  },
-  "apiKey": {
-    "title": "AI 平台密钥",
-    "hint": "用于 AI 功能。密钥仅保存在本地，不会上传服务器。",
-    "platform": "AI 平台",
-    "custom": "自定义",
-    "customUrl": "API 地址",
-    "customModel": "模型名称",
-    "save": "保存",
-    "clear": "清除",
-    "saved": "密钥已保存",
-    "cleared": "密钥已清除",
-    "errEmpty": "请输入有效的 API 密钥",
-    "errCustom": "请填写 API 地址和模型名称"
   }
 }

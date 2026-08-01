@@ -4435,796 +4435,75 @@
         }
       });
 
-      // ===== Auth Overlay =====
-      const authOverlay = document.getElementById('authOverlay');
-      const authCircle = document.getElementById('authCircle');
-      const authClose = document.getElementById('authClose');
-      const loginForm = document.getElementById('loginForm');
-      const registerForm = document.getElementById('registerForm');
-      const switchToRegister = document.getElementById('switchToRegister');
-      const switchToLogin = document.getElementById('switchToLogin');
-      const authHeroTitle = document.getElementById('authHeroTitle');
-      const authHeroSubtitle = document.getElementById('authHeroSubtitle');
-      const loginError = document.getElementById('loginError');
-      const registerError = document.getElementById('registerError');
-      const loginSubmit = document.getElementById('loginSubmit');
-      const registerSubmit = document.getElementById('registerSubmit');
-      const registerNext = document.getElementById('registerNext');
-      const registerBack = document.getElementById('registerBack');
-      const registerStep1 = document.getElementById('registerStep1');
-      const registerStep2 = document.getElementById('registerStep2');
-      const registerAvatarZone = document.getElementById('registerAvatarZone');
-      const registerAvatarFile = document.getElementById('registerAvatarFile');
-      const registerAvatarPreview = document.getElementById('registerAvatarPreview');
-      const registerError2 = document.getElementById('registerError2');
-      const registerSpider2 = document.getElementById('registerSpider2');
-      let registerAvatarData = null;
+      // ===== Greeting Card =====
+      const GREETING_QUOTES_ZH = [
+        '工欲善其事，必先利其器',
+        '千里之行，始于足下',
+        '不积跬步，无以至千里',
+        '学而不思则罔，思而不学则殆',
+        '三人行，必有我师焉',
+        '温故而知新，可以为师矣',
+        '知之为知之，不知为不知，是知也',
+        '学而时习之，不亦说乎',
+        '己所不欲，勿施于人',
+        '天行健，君子以自强不息',
+        '路漫漫其修远兮，吾将上下而求索',
+        '博学之，审问之，慎思之，明辨之，笃行之',
+      ];
+      const GREETING_QUOTES_EN = [
+        'Well begun is half done.',
+        'A journey of a thousand miles begins with a single step.',
+        'The best time to plant a tree was 20 years ago. The second best time is now.',
+        'Knowledge is power.',
+        'Stay hungry, stay foolish.',
+        'Simplicity is the ultimate sophistication.',
+        'Do what you can, with what you have, where you are.',
+        'It does not matter how slowly you go as long as you do not stop.',
+        'Everything you can imagine is real.',
+        'Whatever you are, be a good one.',
+      ];
 
-      const authLoadingOverlay = document.getElementById('authLoadingOverlay');
-      const authLoadingCircle = document.getElementById('authLoadingCircle');
-
-      function showAuthLoading(originX, originY) {
-        const dx = Math.max(originX, window.innerWidth - originX);
-        const dy = Math.max(originY, window.innerHeight - originY);
-        const radius = Math.sqrt(dx * dx + dy * dy);
-        const diameter = radius * 2;
-        authLoadingCircle.style.width = diameter + 'px';
-        authLoadingCircle.style.height = diameter + 'px';
-        authLoadingCircle.style.left = (originX - radius) + 'px';
-        authLoadingCircle.style.top = (originY - radius) + 'px';
-        authLoadingOverlay.classList.remove('closing');
-        authLoadingOverlay.classList.remove('active');
-        // Force reflow with inline scale(0), then clear it so CSS class can take over
-        authLoadingCircle.style.transform = 'scale(0)';
-        void authLoadingCircle.offsetWidth;
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            authLoadingCircle.style.transform = '';
-            authLoadingOverlay.classList.add('active');
-          });
-        });
-      }
-
-      function hideAuthLoading() {
-        authLoadingOverlay.classList.remove('active');
-        authLoadingOverlay.classList.add('closing');
-        setTimeout(() => {
-          authLoadingOverlay.classList.remove('closing');
-        }, 600);
-      }
-
-      // AUTH_API_BASE is imported from ./config.js (overridable via VITE_API_BASE env var)
-
-      const SERVER_ERROR_MAP = {
-        'Email already registered': 'auth.errEmailExists',
-        'Invalid email or password': 'auth.errInvalidCredentials',
-        'Account banned': 'auth.errAccountBanned',
-        'Server error': 'auth.errServer',
-        'Not found': 'auth.errNotFound',
-        'Daily usage limit reached': 'auth.errDailyLimit',
-        'Invalid email format': 'auth.errInvalidEmail',
-        'Password must be 6-64 characters': 'auth.errPasswordMax',
-        'Username must be 1-64 characters': 'auth.errUsernameRequired',
-        'No fields to update': 'auth.errUnknown',
-        'Old password incorrect': 'auth.errInvalidCredentials',
-        'Password changed successfully': null,
-      };
-
-      function translateServerError(msg) {
-        if (!msg) return t('auth.errUnknown');
-        const key = SERVER_ERROR_MAP[msg];
-        if (key === null) return msg;
-        if (key) return t(key);
-        return msg;
-      }
-
-      function authHeaders(extra = {}) {
-        const token = localStorage.getItem('toolknit_token');
-        const headers = { 'Content-Type': 'application/json', ...extra };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        return headers;
-      }
-
-      function updatePersonalPanel(user) {
-        if (!user) return;
+      function initGreetingCard() {
         const panel = document.getElementById('personalPanel');
         if (!panel) return;
-        panel.classList.add('logged-in');
-        const nameEl = panel.querySelector('.logged-in-view .info-name');
-        const metaEls = panel.querySelectorAll('.logged-in-view .info-meta');
-        const avatarImg = panel.querySelector('.logged-in-view .avatar img');
-        if (nameEl) nameEl.textContent = user.username || user.email || 'User';
-        if (metaEls[0]) metaEls[0].textContent = user.email || '';
-        if (metaEls[1]) metaEls[1].textContent = `ID: ${user.id || ''}`;
-        if (avatarImg) {
-          const avatarParent = avatarImg.parentElement;
-          if (user.avatar) {
-            avatarImg.onerror = function() {
-              this.style.display = 'none';
-              if (avatarParent) avatarParent.classList.add('avatar-fallback');
-            };
-            avatarImg.onload = function() {
-              this.style.display = '';
-              if (avatarParent) avatarParent.classList.remove('avatar-fallback');
-            };
-            avatarImg.src = user.avatar;
-          } else {
-            avatarImg.style.display = 'none';
-            if (avatarParent) avatarParent.classList.add('avatar-fallback');
-          }
-        }
-      }
+        const iconEl = document.getElementById('greetingIcon');
+        const textEl = document.getElementById('greetingText');
+        const quoteEl = document.getElementById('greetingQuote');
+        const timeEl = document.getElementById('greetingTime');
 
-      function hideAutoLoginMask() {
-        const mask = document.getElementById('autoLoginMask');
-        if (!mask) return;
-        mask.classList.remove('active');
-        mask.classList.add('fade-out');
-        setTimeout(() => {
-          mask.classList.remove('fade-out');
-        }, 400);
-      }
+        const lang = getLang();
+        const hour = new Date().getHours();
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      async function restoreSession() {
-        const token = localStorage.getItem('toolknit_token');
-        if (!token) return;
-
-        const mask = document.getElementById('autoLoginMask');
-        if (mask) mask.classList.add('active');
-
-        let maskHidden = false;
-        function hideMaskOnce() {
-          if (maskHidden) return;
-          maskHidden = true;
-          hideAutoLoginMask();
-        }
-
-        const timeoutId = setTimeout(hideMaskOnce, 8000);
-
-        try {
-          const res = await fetch(`${AUTH_API_BASE}/api/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await res.json();
-          clearTimeout(timeoutId);
-          if (data.code === 0 && data.data && data.data.user) {
-            localStorage.setItem('toolknit_user', JSON.stringify(data.data.user));
-            // Update UI outside try block so errors here don't clear the token
-            try {
-              updatePersonalPanel(data.data.user);
-              if (typeof renderFavorites === 'function') renderFavorites();
-            } catch (uiErr) {
-              console.error('[restoreSession] UI update error:', uiErr);
-            }
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                hideMaskOnce();
-              });
-            });
-          } else {
-            // Auth error (invalid/expired token) — clear token
-            console.warn('[restoreSession] Auth failed, clearing token:', data.msg);
-            localStorage.removeItem('toolknit_token');
-            localStorage.removeItem('toolknit_user');
-            hideMaskOnce();
-          }
-        } catch (e) {
-          // Network error — don't clear token, just hide mask
-          clearTimeout(timeoutId);
-          console.error('[restoreSession] Network error:', e);
-          hideMaskOnce();
-        }
-      }
-
-      function logout() {
-        localStorage.removeItem('toolknit_token');
-        localStorage.removeItem('toolknit_user');
-        const panel = document.getElementById('personalPanel');
-        if (panel) panel.classList.remove('logged-in');
-        if (typeof renderFavorites === 'function') renderFavorites();
-      }
-
-      function openAuthOverlay(originX, originY) {
-        // Calculate max radius to cover the entire screen from the click point
-        const dx = Math.max(originX, window.innerWidth - originX);
-        const dy = Math.max(originY, window.innerHeight - originY);
-        const radius = Math.sqrt(dx * dx + dy * dy);
-
-        // Set circle size and position (but NOT transform — that's controlled by CSS class)
-        const diameter = radius * 2;
-        authCircle.style.width = diameter + 'px';
-        authCircle.style.height = diameter + 'px';
-        authCircle.style.left = (originX - radius) + 'px';
-        authCircle.style.top = (originY - radius) + 'px';
-
-        // Remove inline transform so CSS class can take over
-        authCircle.style.transform = '';
-        authOverlay.classList.remove('closing');
-        authOverlay.classList.remove('active');
-        authOverlay.classList.add('initial-open');
-
-        // Force reflow then add active to trigger transition
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            authOverlay.classList.add('active');
-          });
-        });
-
-        // Remove initial-open after animations complete
-        setTimeout(() => {
-          authOverlay.classList.remove('initial-open');
-        }, 2500);
-
-        // Show spider on login button after form elements finish entering
-        showSpiderAfterDelay(loginSpider, 1500);
-      }
-
-      function closeAuthOverlay() {
-        authOverlay.classList.remove('active');
-        // Hide spiders
-        hideSpider(loginSpider);
-        hideSpider(registerSpider);
-        authOverlay.classList.add('closing');
-        setTimeout(() => {
-          authOverlay.classList.remove('closing');
-          // Reset forms
-          // Reset to login form without animation
-          registerForm.classList.remove('visible', 'exiting');
-          loginForm.classList.remove('exiting');
-          loginForm.classList.add('visible');
-          loginSpider.classList.remove('show', 'exit');
-          registerSpider.classList.remove('show', 'exit');
-          if (registerSpider2) registerSpider2.classList.remove('show', 'exit');
-          const heroEl = document.querySelector('.auth-hero');
-          heroEl.classList.remove('hero-exit', 'hero-enter');
-          loginError.classList.remove('show');
-          registerError.classList.remove('show');
-          if (registerError2) registerError2.classList.remove('show');
-          loginError.textContent = '';
-          registerError.textContent = '';
-          if (registerError2) registerError2.textContent = '';
-          authHeroTitle.textContent = t('auth.loginTitle');
-          authHeroSubtitle.textContent = t('auth.loginSubtitle');
-          // Reset register steps
-          if (registerStep1) registerStep1.style.display = '';
-          if (registerStep2) registerStep2.style.display = 'none';
-          registerAvatarData = null;
-          if (registerAvatarPreview) registerAvatarPreview.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;color:#bbb;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
-          if (registerAvatarFile) registerAvatarFile.value = '';
-        }, 800);
-      }
-
-      // Spider show/hide on submit buttons
-      const loginSpider = document.getElementById('loginSpider');
-      const registerSpider = document.getElementById('registerSpider');
-
-      function showSpider(spiderEl) {
-        spiderEl.classList.remove('exit');
-        spiderEl.classList.add('show');
-      }
-
-      function hideSpider(spiderEl) {
-        spiderEl.classList.remove('show');
-        spiderEl.classList.add('exit');
-      }
-
-      // Show spider after form elements finish animating in
-      // Initial open: after ~2.5s (hero 0.8s + form 1.5s + buffer)
-      // Form switch: after ~1.2s (exit 0.7s + enter 0.55s + buffer)
-      function showSpiderAfterDelay(spiderEl, delay) {
-        setTimeout(() => {
-          showSpider(spiderEl);
-        }, delay);
-      }
-
-      let isAuthSwitching = false;
-
-      function switchForm(fromEl, toEl, titleText, subtitleText, fromSpider, toSpider) {
-        if (isAuthSwitching) return;
-        isAuthSwitching = true;
-
-        // Step 1: spider runs out (1.2s) + hero exits + form elements stagger out — all simultaneously
-        hideSpider(fromSpider);
-
-        const heroEl = document.querySelector('.auth-hero');
-        heroEl.classList.add('hero-exit');
-
-        fromEl.classList.remove('visible');
-        fromEl.classList.add('exiting');
-
-        // Step 2: after spider finishes running out (1.2s), swap to new form
-        setTimeout(() => {
-          fromEl.classList.remove('exiting');
-          fromSpider.classList.remove('exit');
-
-          // Update hero text
-          authHeroTitle.textContent = titleText;
-          authHeroSubtitle.textContent = subtitleText;
-
-          // Hero enters from below
-          heroEl.classList.remove('hero-exit');
-          heroEl.classList.add('hero-enter');
-
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              heroEl.classList.remove('hero-enter');
-            });
-          });
-
-          // New form elements stagger in
-          toEl.classList.add('visible');
-
-          // Show spider on new button after elements finish entering (~1.1s)
-          showSpiderAfterDelay(toSpider, 1100);
-
-          // Unlock after spider finishes running in (1.1s delay + 1.2s run = 2.3s)
-          setTimeout(() => {
-            isAuthSwitching = false;
-          }, 2300);
-        }, 1200);
-      }
-
-      function showLoginForm() {
-        switchForm(
-          registerForm,
-          loginForm,
-          t('auth.loginTitle'),
-          t('auth.loginSubtitle'),
-          registerSpider,
-          loginSpider
-        );
-        loginError.classList.remove('show');
-      }
-
-      function showRegisterForm() {
-        switchForm(
-          loginForm,
-          registerForm,
-          t('auth.registerTitle'),
-          t('auth.registerSubtitle'),
-          loginSpider,
-          registerSpider
-        );
-        registerError.classList.remove('show');
-        if (registerError2) registerError2.classList.remove('show');
-        // Reset to step 1
-        if (registerStep1) registerStep1.style.display = '';
-        if (registerStep2) registerStep2.style.display = 'none';
-        registerAvatarData = null;
-        if (registerSubmit) registerSubmit.classList.add('disabled-avatar');
-        if (registerAvatarPreview) registerAvatarPreview.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;color:#bbb;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
-      }
-
-      function showAuthError(el, msg) {
-        el.textContent = msg;
-        el.classList.add('show');
-      }
-
-      // Login button in personal panel → trigger circular expansion
-      const personalPanel = document.getElementById('personalPanel');
-      const loginBtn = personalPanel ? personalPanel.querySelector('.login-btn') : null;
-      if (loginBtn) {
-        loginBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const rect = loginBtn.getBoundingClientRect();
-          const cx = rect.left + rect.width / 2;
-          const cy = rect.top + rect.height / 2;
-          openAuthOverlay(cx, cy);
-        });
-      }
-      // Logout button → show confirm dialog
-      const btnLogout = document.getElementById('btnLogout');
-      const logoutConfirmOverlay = document.getElementById('logoutConfirmOverlay');
-      const logoutCancelBtn = document.getElementById('logoutCancelBtn');
-      const logoutConfirmBtn = document.getElementById('logoutConfirmBtn');
-
-      function showLogoutConfirm() {
-        if (logoutConfirmOverlay) logoutConfirmOverlay.classList.add('visible');
-      }
-      function hideLogoutConfirm() {
-        if (logoutConfirmOverlay) logoutConfirmOverlay.classList.remove('visible');
-      }
-
-      if (btnLogout) {
-        btnLogout.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showLogoutConfirm();
-        });
-      }
-      if (logoutCancelBtn) {
-        logoutCancelBtn.addEventListener('click', () => hideLogoutConfirm());
-      }
-      if (logoutConfirmBtn) {
-        logoutConfirmBtn.addEventListener('click', () => {
-          hideLogoutConfirm();
-          logout();
-        });
-      }
-      if (logoutConfirmOverlay) {
-        logoutConfirmOverlay.addEventListener('click', (e) => {
-          if (e.target === logoutConfirmOverlay) hideLogoutConfirm();
-        });
-      }
-
-      // API Key button
-      const btnApiKey = document.getElementById('btnApiKey');
-      const apiKeyOverlay = document.getElementById('apiKeyOverlay');
-      const apiKeyBack = document.getElementById('apiKeyBack');
-      const apiKeyInput = document.getElementById('apiKeyInput');
-      const apiKeyToggle = document.getElementById('apiKeyToggle');
-      const apiKeySave = document.getElementById('apiKeySave');
-      const apiKeyClear = document.getElementById('apiKeyClear');
-      const apiKeyStatus = document.getElementById('apiKeyStatus');
-      const apiKeyDropdown = document.getElementById('apiKeyDropdown');
-      const apiKeyDropdownTrigger = document.getElementById('apiKeyDropdownTrigger');
-      const apiKeyDropdownMenu = document.getElementById('apiKeyDropdownMenu');
-      const apiKeyDropdownValue = document.getElementById('apiKeyDropdownValue');
-      let apiKeyPlatformValue = 'deepseek';
-      const apiKeyCustomWrap = document.getElementById('apiKeyCustomWrap');
-      const apiKeyCustomUrl = document.getElementById('apiKeyCustomUrl');
-      const apiKeyCustomModel = document.getElementById('apiKeyCustomModel');
-
-      // AI platform configurations
-      const AI_PLATFORMS = {
-        deepseek: { url: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat', label: 'DeepSeek' },
-        openai: { url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', label: 'OpenAI' },
-        qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen-plus', label: 'Qwen' },
-        moonshot: { url: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k', label: 'Moonshot' },
-        custom: { url: '', model: '' },
-      };
-
-      function getAiPlatformConfig() {
-        const platform = localStorage.getItem('ai_platform') || 'deepseek';
-        const base = AI_PLATFORMS[platform] || AI_PLATFORMS.deepseek;
-        if (platform === 'custom') {
-          return {
-            url: localStorage.getItem('ai_custom_url') || '',
-            model: localStorage.getItem('ai_custom_model') || '',
-          };
-        }
-        return { url: base.url, model: base.model };
-      }
-
-      function hasAiApiKey() {
-        return !!localStorage.getItem('ai_api_key');
-      }
-
-      function setApiKeyPlatform(value) {
-        apiKeyPlatformValue = value;
-        const items = apiKeyDropdownMenu.querySelectorAll('.api-key-dropdown-item');
-        items.forEach(item => {
-          item.classList.toggle('active', item.dataset.value === value);
-          if (item.dataset.value === value) {
-            apiKeyDropdownValue.textContent = item.textContent;
-          }
-        });
-        if (value === 'custom') {
-          if (apiKeyCustomWrap) apiKeyCustomWrap.style.display = '';
+        let icon, text;
+        if (lang === 'en') {
+          if (hour >= 6 && hour < 12) { icon = '🌅'; text = 'Good morning! A new day full of possibilities.'; }
+          else if (hour >= 12 && hour < 18) { icon = '☀️'; text = 'Good afternoon! Keep up the focus.'; }
+          else if (hour >= 18 && hour < 22) { icon = '🌇'; text = 'Good evening! Time to unwind.'; }
+          else { icon = '🌙'; text = 'Good night! Rest well.'; }
         } else {
-          if (apiKeyCustomWrap) apiKeyCustomWrap.style.display = 'none';
+          if (hour >= 6 && hour < 12) { icon = '🌅'; text = '早安！新的一天充满可能'; }
+          else if (hour >= 12 && hour < 18) { icon = '☀️'; text = '午安！保持专注，继续前行'; }
+          else if (hour >= 18 && hour < 22) { icon = '🌇'; text = '晚上好！回顾一天的收获'; }
+          else { icon = '🌙'; text = '夜深了，记得早点休息'; }
         }
+
+        const quotes = lang === 'en' ? GREETING_QUOTES_EN : GREETING_QUOTES_ZH;
+        const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+        const quote = quotes[dayOfYear % quotes.length];
+
+        if (iconEl) iconEl.textContent = icon;
+        if (textEl) textEl.textContent = text;
+        if (quoteEl) quoteEl.textContent = quote;
+        if (timeEl) timeEl.textContent = `— ToolKnit · ${dateStr}`;
       }
 
-      if (apiKeyDropdownTrigger && apiKeyDropdown) {
-        apiKeyDropdownTrigger.addEventListener('click', (e) => {
-          e.stopPropagation();
-          apiKeyDropdown.classList.toggle('open');
-        });
-        document.addEventListener('click', (e) => {
-          if (!apiKeyDropdown.contains(e.target)) {
-            apiKeyDropdown.classList.remove('open');
-          }
-        });
-      }
-      if (apiKeyDropdownMenu) {
-        apiKeyDropdownMenu.querySelectorAll('.api-key-dropdown-item').forEach(item => {
-          item.addEventListener('click', () => {
-            setApiKeyPlatform(item.dataset.value);
-            apiKeyDropdown.classList.remove('open');
-          });
-        });
-      }
 
-      if (btnApiKey && apiKeyOverlay) {
-        btnApiKey.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const savedPlatform = localStorage.getItem('ai_platform') || 'deepseek';
-          const savedKey = localStorage.getItem('ai_api_key') || '';
-          setApiKeyPlatform(savedPlatform);
-          apiKeyInput.value = savedKey;
-          if (apiKeyCustomUrl) apiKeyCustomUrl.value = localStorage.getItem('ai_custom_url') || '';
-          if (apiKeyCustomModel) apiKeyCustomModel.value = localStorage.getItem('ai_custom_model') || '';
-          apiKeyStatus.classList.remove('show', 'success', 'error');
-          apiKeyOverlay.classList.add('visible');
-        });
-      }
-      if (apiKeyBack && apiKeyOverlay) {
-        apiKeyBack.addEventListener('click', () => {
-          apiKeyOverlay.classList.remove('visible');
-        });
-      }
-      if (apiKeyToggle) {
-        apiKeyToggle.addEventListener('click', () => {
-          apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
-        });
-      }
-      if (apiKeySave) {
-        apiKeySave.addEventListener('click', () => {
-          const key = apiKeyInput.value.trim();
-          if (!key) {
-            apiKeyStatus.textContent = t('apiKey.errEmpty');
-            apiKeyStatus.className = 'api-key-status show error';
-            return;
-          }
-          const platform = apiKeyPlatformValue;
-          localStorage.setItem('ai_platform', platform);
-          localStorage.setItem('ai_api_key', key);
-          if (platform === 'custom') {
-            const customUrl = apiKeyCustomUrl ? apiKeyCustomUrl.value.trim() : '';
-            const customModel = apiKeyCustomModel ? apiKeyCustomModel.value.trim() : '';
-            if (!customUrl || !customModel) {
-              apiKeyStatus.textContent = t('apiKey.errCustom');
-              apiKeyStatus.className = 'api-key-status show error';
-              return;
-            }
-            localStorage.setItem('ai_custom_url', customUrl);
-            localStorage.setItem('ai_custom_model', customModel);
-          }
-          apiKeyStatus.textContent = t('apiKey.saved');
-          apiKeyStatus.className = 'api-key-status show success';
-          setTimeout(() => apiKeyOverlay.classList.remove('visible'), 800);
-        });
-      }
-      if (apiKeyClear) {
-        apiKeyClear.addEventListener('click', () => {
-          apiKeyInput.value = '';
-          localStorage.removeItem('ai_api_key');
-          localStorage.removeItem('ai_platform');
-          localStorage.removeItem('ai_custom_url');
-          localStorage.removeItem('ai_custom_model');
-          // Also clear legacy key
-          localStorage.removeItem('deepseek_api_key');
-          apiKeyStatus.textContent = t('apiKey.cleared');
-          apiKeyStatus.className = 'api-key-status show success';
-          setTimeout(() => apiKeyOverlay.classList.remove('visible'), 800);
-        });
-      }
 
-      // AI Login Required Overlay
-      const aiLoginOverlay = document.getElementById('aiLoginOverlay');
-      const aiLoginCancel = document.getElementById('aiLoginCancel');
-      const aiLoginGoSettings = document.getElementById('aiLoginGoSettings');
 
-      function showAiLoginOverlay() {
-        if (aiLoginOverlay) aiLoginOverlay.classList.add('visible');
-      }
-      function hideAiLoginOverlay() {
-        if (aiLoginOverlay) aiLoginOverlay.classList.remove('visible');
-      }
-      if (aiLoginCancel) {
-        aiLoginCancel.addEventListener('click', hideAiLoginOverlay);
-      }
-      if (aiLoginGoSettings) {
-        aiLoginGoSettings.addEventListener('click', () => {
-          hideAiLoginOverlay();
-          if (!isLoggedIn()) {
-            const pp = document.getElementById('personalPanel');
-            const lb = pp ? pp.querySelector('.login-btn') : null;
-            if (lb) {
-              const rect = lb.getBoundingClientRect();
-              openAuthOverlay(rect.left + rect.width / 2, rect.top + rect.height / 2);
-            }
-          } else {
-            if (btnApiKey) btnApiKey.click();
-          }
-        });
-      }
 
-      // Check AI login before opening AI tool overlay
-      function openToolWithAiCheck(openFn) {
-        if (!isLoggedIn() || !hasAiApiKey()) {
-          showAiLoginOverlay();
-          return;
-        }
-        openFn();
-      }
 
-      // Restore session on startup
-      restoreSession();
-
-      // Close button
-      authClose.addEventListener('click', closeAuthOverlay);
-
-      // Switch between login and register
-      switchToRegister.addEventListener('click', (e) => {
-        e.preventDefault();
-        showRegisterForm();
-      });
-      switchToLogin.addEventListener('click', (e) => {
-        e.preventDefault();
-        showLoginForm();
-      });
-
-      // Enter key to submit
-      document.getElementById('loginPassword').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') loginSubmit.click();
-      });
-      document.getElementById('registerPassword').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') registerNext.click();
-      });
-
-      // Login submit
-      loginSubmit.addEventListener('click', async () => {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        if (!email || !password) {
-          showAuthError(loginError, t('auth.errFillEmailPassword'));
-          return;
-        }
-        loginSubmit.disabled = true;
-        const btnRect = loginSubmit.getBoundingClientRect();
-        showAuthLoading(btnRect.left + btnRect.width / 2, btnRect.top + btnRect.height / 2);
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 15000);
-          const res = await fetch(`${AUTH_API_BASE}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-            signal: controller.signal,
-          });
-          clearTimeout(timeout);
-          const data = await res.json();
-          if (data.code === 0 && data.data) {
-            localStorage.setItem('toolknit_token', data.data.token);
-            localStorage.setItem('toolknit_user', JSON.stringify(data.data.user));
-            updatePersonalPanel(data.data.user);
-            closeAuthOverlay();
-          } else {
-            showAuthError(loginError, translateServerError(data.msg) || t('auth.errLoginFailed'));
-          }
-        } catch (err) {
-          if (err.name === 'AbortError') {
-            showAuthError(loginError, t('auth.errTimeout'));
-          } else {
-            showAuthError(loginError, t('auth.errNetwork'));
-          }
-        } finally {
-          hideAuthLoading();
-          loginSubmit.disabled = false;
-          loginSubmit.textContent = t('auth.loginBtn');
-        }
-      });
-
-      // Register step 1: Next button
-      registerNext.addEventListener('click', () => {
-        const username = document.getElementById('registerUsername').value.trim();
-        const email = document.getElementById('registerEmail').value.trim();
-        const password = document.getElementById('registerPassword').value;
-        if (!username || !email || !password) {
-          showAuthError(registerError, t('auth.errFillAll'));
-          return;
-        }
-        if (password.length < 6) {
-          showAuthError(registerError, t('auth.errPasswordShort'));
-          return;
-        }
-        registerError.classList.remove('show');
-        registerStep1.style.display = 'none';
-        registerStep2.style.display = '';
-        registerSubmit.classList.add('disabled-avatar');
-      });
-
-      // Register back to step 1
-      if (registerBack) {
-        registerBack.addEventListener('click', (e) => {
-          e.preventDefault();
-          registerStep2.style.display = 'none';
-          registerStep1.style.display = '';
-          if (registerError2) registerError2.classList.remove('show');
-        });
-      }
-
-      // Avatar file selection
-      if (registerAvatarZone) {
-        registerAvatarZone.addEventListener('click', () => {
-          registerAvatarFile.click();
-        });
-      }
-      if (registerAvatarFile) {
-        registerAvatarFile.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-          if (file.size > 2 * 1024 * 1024) {
-            showAuthError(registerError2, t('auth.errAvatarTooLarge'));
-            registerAvatarFile.value = '';
-            return;
-          }
-          registerAvatarData = file;
-          registerSubmit.classList.remove('disabled-avatar');
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            registerAvatarPreview.innerHTML = `<img src="${ev.target.result}" alt="avatar-preview">`;
-          };
-          reader.readAsDataURL(file);
-          if (registerError2) registerError2.classList.remove('show');
-        });
-      }
-
-      // Register step 2: Submit
-      registerSubmit.addEventListener('click', async () => {
-        if (!registerAvatarData) {
-          window.showToast(t('auth.errAvatarRequired'));
-          return;
-        }
-        const username = document.getElementById('registerUsername').value.trim();
-        const email = document.getElementById('registerEmail').value.trim();
-        const password = document.getElementById('registerPassword').value;
-        if (!username || !email || !password) {
-          if (registerError2) showAuthError(registerError2, t('auth.errFillAll'));
-          return;
-        }
-        if (password.length < 6) {
-          if (registerError2) showAuthError(registerError2, t('auth.errPasswordShort'));
-          return;
-        }
-        registerSubmit.disabled = true;
-        const btnRect = registerSubmit.getBoundingClientRect();
-        showAuthLoading(btnRect.left + btnRect.width / 2, btnRect.top + btnRect.height / 2);
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 15000);
-          const res = await fetch(`${AUTH_API_BASE}/api/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, username }),
-            signal: controller.signal,
-          });
-          clearTimeout(timeout);
-          const data = await res.json();
-          if (data.code === 0 && data.data) {
-            localStorage.setItem('toolknit_token', data.data.token);
-            localStorage.setItem('toolknit_user', JSON.stringify(data.data.user));
-            // If avatar selected, upload it
-            if (registerAvatarData && data.data.token) {
-              try {
-                const formData = new FormData();
-                formData.append('avatar', registerAvatarData);
-                const avatarRes = await fetch(`${AUTH_API_BASE}/api/upload/avatar`, {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${data.data.token}` },
-                  body: formData,
-                });
-                const avatarData = await avatarRes.json();
-                if (avatarData.code === 0 && avatarData.data && avatarData.data.user) {
-                  localStorage.setItem('toolknit_user', JSON.stringify(avatarData.data.user));
-                  updatePersonalPanel(avatarData.data.user);
-                } else {
-                  updatePersonalPanel(data.data.user);
-                }
-              } catch (avatarErr) {
-                console.error('Avatar upload after register failed:', avatarErr);
-                updatePersonalPanel(data.data.user);
-              }
-            } else {
-              updatePersonalPanel(data.data.user);
-            }
-            closeAuthOverlay();
-          } else {
-            if (registerError2) showAuthError(registerError2, translateServerError(data.msg) || t('auth.errRegisterFailed'));
-          }
-        } catch (err) {
-          if (err.name === 'AbortError') {
-            if (registerError2) showAuthError(registerError2, t('auth.errTimeout'));
-          } else {
-            if (registerError2) showAuthError(registerError2, t('auth.errNetwork'));
-          }
-        } finally {
-          hideAuthLoading();
-          registerSubmit.disabled = false;
-          registerSubmit.textContent = t('auth.registerBtn');
-        }
-      });
 
       // Changelog: render current version and timeline
       function renderChangelog() {
@@ -8549,11 +7828,11 @@
       }
 
       document.querySelectorAll('.audio-list-item[data-tool="ai-polish"]').forEach(item => {
-        item.addEventListener('click', () => openToolWithAiCheck(openAiPolishOverlay));
+        item.addEventListener('click', () => openAiPolishOverlay());
         item.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            openToolWithAiCheck(openAiPolishOverlay);
+            openAiPolishOverlay();
           }
         });
       });
@@ -8861,11 +8140,11 @@
       }
 
       document.querySelectorAll('.audio-list-item[data-tool="ai-translate"]').forEach(item => {
-        item.addEventListener('click', () => openToolWithAiCheck(openAiTranslateOverlay));
+        item.addEventListener('click', () => openAiTranslateOverlay());
         item.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            openToolWithAiCheck(openAiTranslateOverlay);
+            openAiTranslateOverlay();
           }
         });
       });
@@ -9025,39 +8304,10 @@
       const AI_CHAT_USER_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
 
       function fillUserAvatar(avatarEl) {
-        let userAvatarUrl = null, userName = '';
-        try {
-          const userJson = localStorage.getItem('toolknit_user');
-          if (userJson) {
-            const userObj = JSON.parse(userJson);
-            userAvatarUrl = userObj.avatar || null;
-            userName = userObj.username || userObj.email || '';
-          }
-        } catch (e) {}
-        if (userAvatarUrl) {
-          const img = document.createElement('img');
-          img.src = userAvatarUrl;
-          img.alt = 'Me';
-          img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
-          img.onerror = function() {
-            this.style.display = 'none';
-            _applyAvatarFallback(avatarEl, userName);
-          };
-          avatarEl.appendChild(img);
-        } else {
-          _applyAvatarFallback(avatarEl, userName);
-        }
-      }
-      function _applyAvatarFallback(avatarEl, name) {
-        const initial = (name && name[0]) ? name[0].toUpperCase() : '';
-        if (initial) {
-          avatarEl.innerHTML = '<span style="font-size:14px;font-weight:700;color:#fff;">' + initial + '</span>';
-          avatarEl.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
-        } else {
-          avatarEl.innerHTML = AI_CHAT_USER_SVG;
-          avatarEl.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
-          avatarEl.style.color = '#fff';
-        }
+        // Default avatar (no auth)
+        avatarEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;opacity:0.5;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+        avatarEl.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
+        avatarEl.style.color = '#fff';
       }
 
       function addAiDocChatMsg(role, text, isGenLink = false) {
@@ -10239,11 +9489,11 @@
       }
 
       document.querySelectorAll('.audio-list-item[data-tool="ai-doc"]').forEach(item => {
-        item.addEventListener('click', () => openToolWithAiCheck(openAiDocOverlay));
+        item.addEventListener('click', () => openAiDocOverlay());
         item.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            openToolWithAiCheck(openAiDocOverlay);
+            openAiDocOverlay();
           }
         });
       });
@@ -11280,9 +10530,9 @@
       });
 
       document.querySelectorAll('.audio-list-item[data-tool="ai-table"]').forEach(item => {
-        item.addEventListener('click', () => openToolWithAiCheck(openAiTableOverlay));
+        item.addEventListener('click', () => openAiTableOverlay());
         item.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openToolWithAiCheck(openAiTableOverlay); }
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAiTableOverlay(); }
         });
       });
 
@@ -14952,9 +14202,7 @@
       const toastText = document.getElementById('favToastText');
       let toastTimer = null;
 
-      function isLoggedIn() {
-        return !!localStorage.getItem('toolknit_token');
-      }
+      function isLoggedIn() { return false; /* auth removed */ }
 
       function showToast(msg) {
         if (!toastEl || !toastText) return;
@@ -15041,10 +14289,7 @@
       document.querySelectorAll('.audio-list-item').forEach(item => {
         item.addEventListener('contextmenu', (e) => {
           e.preventDefault();
-          if (!isLoggedIn()) {
-            showToast(t('home.favLoginRequired'));
-            return;
-          }
+          // Favorites now work without login
           const info = getToolInfo(item);
           if (isFavorited(info.toolId)) {
             removeFavorite(info.toolId);
@@ -15067,25 +14312,6 @@
       function renderFavorites() {
         const container = document.getElementById('favoritesContent');
         if (!container) return;
-
-        if (!isLoggedIn()) {
-          container.innerHTML = `
-            <div class="fav-empty-guide">
-              <div class="fav-empty-icon"><i data-lucide="star"></i></div>
-              <div class="fav-empty-text">${escapeHtml(t('home.favEmptyLogin'))}</div>
-              <div class="fav-login-btn" id="favLoginBtn">${escapeHtml(t('home.favEmptyLoginBtn'))}</div>
-            </div>
-          `;
-          const loginBtn = document.getElementById('favLoginBtn');
-          if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
-              const rect = loginBtn.getBoundingClientRect();
-              openAuthOverlay(rect.left + rect.width / 2, rect.top + rect.height / 2);
-            });
-          }
-          if (typeof createIcons === 'function') createIcons({ icons });
-          return;
-        }
 
         const favs = getFavorites();
         if (favs.length === 0) {

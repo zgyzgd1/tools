@@ -15,10 +15,6 @@
     "creative": "Creative Tools",
     "settings": "Settings"
   },
-  "user": {
-    "guest": "Guest",
-    "notLoggedIn": "Not logged in"
-  },
   "home": {
     "update": {
       "title": "New Version Available",
@@ -31,29 +27,14 @@
       "confirm": "Download",
       "downloadFail": "Download failed: {error}"
     },
-    "aiLogin": {
-      "title": "Login Required",
-      "desc": "AI features require login and an AI platform key. Please configure it in Settings.",
-      "cancel": "Cancel",
-      "goSettings": "Go to Settings"
-    },
     "welcome": "Hi",
     "welcomeTitle": "Home",
     "welcomeDesc": "Welcome to the ToolKnit toolkit.",
     "homeCategoryDesc": "Welcome to the ToolKnit toolkit.",
-    "personalPanel": "Personal Panel",
-    "guest": "Guest",
-    "clickToLogin": "Click to Login",
-    "clickToSwitch": "Click to switch",
-    "apiKey": "API Key",
-    "logout": "Logout",
-    "logoutConfirmTitle": "Confirm Logout",
-    "logoutConfirmMsg": "You will need to log in again. Are you sure?",
     "cancel": "Cancel",
     "name": "Name",
     "signature": "Signature",
     "id": "ID",
-    "autoLogin": "Auto-login",
     "quickAccess": "Quick Access",
     "recentlyUsed": "Recently Used",
     "stats": "Statistics",
@@ -71,10 +52,7 @@
     "empty": "No content yet",
     "favAdd": "Add to Favorites",
     "favRemove": "Remove from Favorites",
-    "favEmptyLogin": "Log in to favorite your frequently used tools",
-    "favEmptyLoginBtn": "Log In",
     "favEmptyGuide": "Right-click any tool to add it here",
-    "favLoginRequired": "Please log in first to favorite tools",
     "favAdded": "Added to Favorites",
     "favRemoved": "Removed from Favorites",
     "feedbackPage": {
@@ -1211,7 +1189,11 @@
     "blog": "Blog",
     "blogDesc": "Latest updates & tips",
     "feedback": "Feedback",
-    "feedbackDesc": "Send your suggestions"
+    "feedbackDesc": "Send your suggestions",
+    "greeting": {
+      "personalPanel": "Daily Inspiration",
+      "favEmptyGuide": "Right-click any tool to add it here"
+    }
   },
   "pdfMerge": {
     "title": "PDF Merge",
@@ -1484,61 +1466,5 @@
     "currentVersion": "v1.0 Beta",
     "version": "Version",
     "date": "Date"
-  },
-  "auth": {
-    "email": "Email",
-    "password": "Password",
-    "username": "Username",
-    "usernamePlaceholder": "Your nickname",
-    "passwordPlaceholder": "At least 6 characters",
-    "loginBtn": "Login",
-    "registerBtn": "Submit Registration",
-    "nextBtn": "Next",
-    "backBtn": "Back",
-    "avatarHint": "Click to upload avatar (optional)",
-    "avatarTitle": "Please upload your avatar",
-    "noAccount": "No account?",
-    "registerHere": "Sign up",
-    "haveAccount": "Already have an account?",
-    "loginHere": "Sign in",
-    "loginTitle": "Welcome Back",
-    "loginSubtitle": "Sign in to unlock all features",
-    "registerTitle": "Create Account",
-    "registerSubtitle": "Sign up to start using ToolKnit",
-    "errNetwork": "Network error, please check your connection",
-    "errServer": "Server error, please try again later",
-    "errTimeout": "Request timed out, please retry",
-    "errInvalidEmail": "Invalid email format",
-    "errPasswordShort": "Password must be at least 6 characters",
-    "errPasswordMax": "Password must be 6-64 characters",
-    "errUsernameRequired": "Username is required",
-    "errFillAll": "Please fill in all fields",
-    "errFillEmailPassword": "Please enter email and password",
-    "errEmailExists": "Email already registered",
-    "errInvalidCredentials": "Invalid email or password",
-    "errAccountBanned": "Account has been banned",
-    "errRegisterFailed": "Registration failed",
-    "errAvatarTooLarge": "Avatar file must be under 2MB",
-    "errAvatarRequired": "Please upload an avatar before submitting",
-    "errLoginFailed": "Login failed",
-    "errSessionExpired": "Session expired, please log in again",
-    "errDailyLimit": "Daily usage limit reached",
-    "errUnauthorized": "Unauthorized, please log in",
-    "errNotFound": "Resource not found",
-    "errUnknown": "An unknown error occurred"
-  },
-  "apiKey": {
-    "title": "AI Platform Key",
-    "hint": "Used for AI features. Key is stored locally only, never uploaded.",
-    "platform": "AI Platform",
-    "custom": "Custom",
-    "customUrl": "API URL",
-    "customModel": "Model Name",
-    "save": "Save",
-    "clear": "Clear",
-    "saved": "Key saved",
-    "cleared": "Key cleared",
-    "errEmpty": "Please enter a valid API key",
-    "errCustom": "Please fill in API URL and model name"
   }
 }
